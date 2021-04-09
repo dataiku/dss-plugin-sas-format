@@ -1,13 +1,4 @@
 # Changelog
 
-## Version X.Y.Z - Type of release (*) - YYYY-MM-DD
-- Changes 1 ...
-- Changes 2 ... 
-- ...
-
-(*) Possible types of releases
-
-- Initial release
-- Bugfix release
-- Feature release
-- .... 
+## Version 1.2.0 - Feature release - 2021-04-09
+- added support of DSS 9.0.1 Seekable streams
