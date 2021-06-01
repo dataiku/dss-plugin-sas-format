@@ -47,6 +47,8 @@ class SASFormatExtractor(FormatExtractor):
         if line is not None:
             row = {}
             for i, value in enumerate(line):
+                if str(value) == "9999-12-29":
+                    value = "9999-12-31"
                 row[self.columns[i]] = str(value)
             return row
         return None
