@@ -1,0 +1,12 @@
+{
+    "meta" : {
+        "label" : "SAS using sas7bdat"
+    },
+
+    "canBeDatasetFormat" : true,
+    "canRead" : true,
+    "canWrite" : false,
+    "canExtractSchema" : true,
+    
+    "params": []
+}
