@@ -61,7 +61,6 @@ class SASFormatExtractor(FormatExtractor):
 
         if dump_to_file:
             dirname, _ = os.path.split(os.path.abspath(__file__))
-            fullpath = os.path.join(dirname, 'dumped-%s.sas7bdat' % (time.time()))
             with TmpFolder(dirname) as tmp_folder_path:
                 fullpath = os.path.join(tmp_folder_path, 'dumped-%s.sas7bdat' % (time.time()))
                 with open(fullpath, 'wb') as of:
