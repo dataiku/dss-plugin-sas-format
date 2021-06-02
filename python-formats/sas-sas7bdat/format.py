@@ -1,5 +1,5 @@
-from sas7bdat import SAS7BDAT
 from dataiku.customformat import Formatter, FormatExtractor
+from sas_format_extractor import SAS7BDATFormatExtractor
 
 
 class SASFormatter(Formatter):
@@ -23,32 +23,17 @@ class SASFormatExtractor(FormatExtractor):
         :param stream: the stream to read the formatted data from
         """
         FormatExtractor.__init__(self, stream)
-        with SAS7BDAT(path="", fh=self.stream, skip_header=False) as sas_handler:
-            self.iterator = sas_handler.readlines()
-            self.columns = next(self.iterator)
-
-            # example to retrieve some special types
-            # self.sas_columns = sas_handler.columns
+        self.sas_format_extractor = SAS7BDATFormatExtractor(self.stream)
 
     def read_schema(self):
         """
         Get the schema of the data in the stream, if the schema can be known upfront.
         """
-        # example to retrieve some special types
-        # return [{"name": column.name, "type": "STRING" if column.format != "DATE" else "DATE"} for column in self.sas_columns]
-        return [{"name": column_name, "type": "STRING"} for column_name in self.columns]
+        return self.sas_format_extractor.read_schema()
 
     def read_row(self):
         """
         Read one row from the formatted stream
         :returns: a dict of the data (name, value), or None if reading is finished
         """
-        line = next(self.iterator, None)
-        if line is not None:
-            row = {}
-            for i, value in enumerate(line):
-                if str(value) == "9999-12-29":
-                    value = "9999-12-31"
-                row[self.columns[i]] = str(value)
-            return row
-        return None
+        return self.sas_format_extractor.read_row()
