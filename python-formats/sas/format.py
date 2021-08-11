@@ -5,7 +5,7 @@ from collections import OrderedDict
 import pandas as pd
 
 from dataiku.customformat import Formatter, FormatExtractor
-
+from dataiku.base.utils import TmpFolder
 
 class SASFormatter(Formatter):
     def __init__(self, config, plugin_config):
@@ -61,19 +61,23 @@ class SASFormatExtractor(FormatExtractor):
 
         if dump_to_file:
             dirname, _ = os.path.split(os.path.abspath(__file__))
-            fullpath = os.path.join(dirname, 'dumped-%s.sas7bdat' % (time.time()))
-            with open(fullpath, 'w+') as of:
-                # Reading 500kb data everytime
-                for data in iter((lambda: stream.read(500000)), b''):
-                    of.write(data)
-
-            read_from = fullpath
-
-        self.iterator = pd.read_sas(read_from,
-                                    format=sas_format,
-                                    iterator=True,
-                                    encoding=encoding,
-                                    chunksize=chunksize)
+            with TmpFolder(dirname) as tmp_folder_path:
+                fullpath = os.path.join(tmp_folder_path, 'dumped-%s.sas7bdat' % (time.time()))
+                with open(fullpath, 'wb') as of:
+                    for data in iter((lambda: stream.read(500000)), b''):
+                        of.write(data)
+                # has to be within the with statements before the file is deleted
+                self.iterator = pd.read_sas(fullpath,
+                                            format=sas_format,
+                                            iterator=True,
+                                            encoding=encoding,
+                                            chunksize=chunksize)
+        else:
+            self.iterator = pd.read_sas(read_from,
+                                        format=sas_format,
+                                        iterator=True,
+                                        encoding=encoding,
+                                        chunksize=chunksize)
 
         self.get_chunk()
 
