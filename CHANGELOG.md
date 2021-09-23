@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 1.2.2 - Feature release - 2021-09-23
+
+- remove code env
+
 ## Version 1.2.1 - Feature and bug fix release - 2021-08-12
 
 - fix broken "dump to file" option
