@@ -486,7 +486,13 @@ SAS7BDAT object
             newfmt = '>%s' % newfmt
         else:
             newfmt = '<%s' % newfmt
-        val = struct.unpack(str(newfmt), raw_bytes[:size])[0]
+        try: 
+            val = struct.unpack(str(newfmt), raw_bytes[:size])[0]
+        except struct.error:
+            try:
+                val = struct.unpack('d', raw_bytes[:size])[0]
+            except struct.error:
+                val = None
         if fmt == 's':
             val = val.strip(b'\x00')
             if self.strip_whitespace_from_strings:
