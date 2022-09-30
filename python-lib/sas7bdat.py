@@ -492,7 +492,7 @@ SAS7BDAT object
             try:
                 val = struct.unpack('d', raw_bytes[:size])[0]
             except struct.error:
-                val = None
+                return None
         if fmt == 's':
             val = val.strip(b'\x00')
             if self.strip_whitespace_from_strings:
