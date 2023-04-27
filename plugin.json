@@ -1,6 +1,6 @@
 {
     "id": "sas-format",
-    "version": "1.2.1",
+    "version": "1.3.0",
     "meta": {
         "label": "SAS format provided by Pandas",
         "description": "Format supporting SAS files (.sas7bdat and .xport). This implementation is provided by Pandas and sas7bdat and may be slower than the light one provided with DSS, but supports more options.",
