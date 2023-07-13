@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 1.3.1 - Bugfix release - 2023-07-13
+- Fixed bug in formatter config file
+
 ## Version 1.3.0 - Bugfix release - 2023-04-27
 - ✨ Added support for Python 3.7, 3.8, 3.9, 3.10
 
