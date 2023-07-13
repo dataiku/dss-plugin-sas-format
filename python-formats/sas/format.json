@@ -124,7 +124,7 @@
             "type": "SELECT",
             "defaultValue": "sas7bdat",
             "selectChoices": [
-                {"value": "sas7bdat", "label": "SAS7BDAT"};
+                {"value": "sas7bdat", "label": "SAS7BDAT"},
                 {"value": "xport", "label": "XPORT"}
              ],
             "mandatory" : true
