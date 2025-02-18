@@ -1,5 +1,12 @@
 # Changelog
 
+## Version 1.4.0 - Bugfix release - 2025-02-18
+
+- Improved compatibility by using more recent Pandas version
+- Improved compatibility when not using "Dump to file" option
+- Removed support for Python < 3.9
+- Added support for Python 3.11 and 3.12
+
 ## Version 1.3.1 - Bugfix release - 2023-07-13
 - Fixed bug in formatter config file
 
