@@ -83,12 +83,25 @@ class SASFormatExtractor(FormatExtractor):
         encoding = config.get("encoding", "latin_1")
         dump_to_file = config.get("dump_to_file", False)
 
+        self.sas_format = sas_format
         self.hasSchema = schema != None
 
-        if dump_to_file:
+        if sas_format.lower() == 'xport' and not dump_to_file:
+            buffer = io.BytesIO()
+            for data in iter((lambda: stream.read(500000)), b''):
+                buffer.write(data)
+            buffer.seek(0)
+            
+            self.iterator = pd.read_sas(buffer,
+                                        format=sas_format,
+                                        iterator=True,
+                                        encoding=encoding,
+                                        chunksize=chunksize)
+        elif dump_to_file:
             dirname, _ = os.path.split(os.path.abspath(__file__))
             with TmpFolder(dirname) as tmp_folder_path:
-                fullpath = os.path.join(tmp_folder_path, 'dumped-%s.sas7bdat' % (time.time()))
+                extension = 'xpt' if sas_format.lower() == 'xport' else 'sas7bdat'
+                fullpath = os.path.join(tmp_folder_path, 'dumped-%s.%s' % (time.time(), extension))
                 with open(fullpath, 'wb') as of:
                     for data in iter((lambda: stream.read(500000)), b''):
                         of.write(data)
@@ -119,7 +132,35 @@ class SASFormatExtractor(FormatExtractor):
         self.chunk_nb = 0
 
     def read_schema(self):
-        return [{"name": c.name, "type": "DOUBLE" if c.ctype == 'd' else "STRING"} for c in self.iterator.columns]
+        # For XPORT format, we need to extract the schema from the fields
+        if self.sas_format.lower() == 'xport':
+            # checking if the iterator has fields or columns
+            if hasattr(self.iterator, 'fields') and self.iterator.fields:
+                schema = []
+                for field in self.iterator.fields:
+                    if isinstance(field, dict):
+                        field_name = field.get('name', 'unknown')
+                        field_type = "DOUBLE" if field.get('ntype') == 1 else "STRING"
+                    else:
+                        field_name = getattr(field, 'name', 'unknown')
+                        field_type = "DOUBLE" if getattr(field, 'ntype', 2) == 1 else "STRING"
+                    
+                    schema.append({"name": field_name, "type": field_type})
+                return schema
+            else:
+                if hasattr(self.iterator, 'columns'):
+                    schema = []
+                    for col_name in self.iterator.columns:
+                        schema.append({"name": col_name, "type": "STRING"})
+                    return schema
+        else:
+            # For SAS7BDAT
+            # checking if the iterator has columns
+            if hasattr(self.iterator, 'columns') and len(self.iterator.columns) > 0:
+                if hasattr(self.iterator.columns[0], 'name'):
+                    return [{"name": c.name, "type": "DOUBLE" if c.ctype == 'd' else "STRING"} for c in self.iterator.columns]
+        
+        return []
 
     def read_row(self):
         try:
