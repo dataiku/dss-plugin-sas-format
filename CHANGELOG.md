@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 1.5.0 - Bugfix release - 2025-06-11
+
+- Fix .xport format handling
+
 ## Version 1.4.0 - Bugfix release - 2025-02-18
 
 - Improved compatibility by using more recent Pandas version
