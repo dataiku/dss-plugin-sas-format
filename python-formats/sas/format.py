@@ -86,12 +86,18 @@ class SASFormatExtractor(FormatExtractor):
         self.sas_format = sas_format
         self.hasSchema = schema != None
 
-        # necessary to handle the case where the stream is not seekable => force dump_to_file
         if sas_format.lower() == 'xport' and not dump_to_file:
-            print("Warning: XPORT format detected, forcing dump_to_file mode for better compatibility")
-            dump_to_file = True
-
-        if dump_to_file:
+            buffer = io.BytesIO()
+            for data in iter((lambda: stream.read(500000)), b''):
+                buffer.write(data)
+            buffer.seek(0)
+            
+            self.iterator = pd.read_sas(buffer,
+                                        format=sas_format,
+                                        iterator=True,
+                                        encoding=encoding,
+                                        chunksize=chunksize)
+        elif dump_to_file:
             dirname, _ = os.path.split(os.path.abspath(__file__))
             with TmpFolder(dirname) as tmp_folder_path:
                 extension = 'xpt' if sas_format.lower() == 'xport' else 'sas7bdat'
