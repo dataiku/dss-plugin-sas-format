@@ -86,7 +86,7 @@ class SASFormatExtractor(FormatExtractor):
         self.sas_format = sas_format
         self.hasSchema = schema != None
 
-        """necessary to handle the case where the stream is not seekable => force dump_to_file"""
+        # necessary to handle the case where the stream is not seekable => force dump_to_file
         if sas_format.lower() == 'xport' and not dump_to_file:
             print("Warning: XPORT format detected, forcing dump_to_file mode for better compatibility")
             dump_to_file = True
@@ -128,6 +128,7 @@ class SASFormatExtractor(FormatExtractor):
     def read_schema(self):
         # For XPORT format, we need to extract the schema from the fields
         if self.sas_format.lower() == 'xport':
+            # checking if the iterator has fields or columns
             if hasattr(self.iterator, 'fields') and self.iterator.fields:
                 schema = []
                 for field in self.iterator.fields:
@@ -148,6 +149,7 @@ class SASFormatExtractor(FormatExtractor):
                     return schema
         else:
             # For SAS7BDAT
+            # checking if the iterator has columns
             if hasattr(self.iterator, 'columns') and len(self.iterator.columns) > 0:
                 if hasattr(self.iterator.columns[0], 'name'):
                     return [{"name": c.name, "type": "DOUBLE" if c.ctype == 'd' else "STRING"} for c in self.iterator.columns]
