@@ -83,7 +83,6 @@ class SASFormatExtractor(FormatExtractor):
         encoding = config.get("encoding", "latin_1")
         dump_to_file = config.get("dump_to_file", False)
 
-        self.sas_format = sas_format
         self.hasSchema = schema != None
 
         # necessary to handle the case where the stream is not seekable => force dump_to_file
