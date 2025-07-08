@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 1.5.1 - Bugfix release - 2025-07-07
+
+- Fix detection of schema of .xport files
+
 ## Version 1.5.0 - Bugfix release - 2025-06-11
 
 - Fix .xport format handling
