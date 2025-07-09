@@ -85,6 +85,7 @@ class SASFormatExtractor(FormatExtractor):
 
         self.sas_format = sas_format
         self.hasSchema = schema != None
+        self.encoding = encoding
 
         if sas_format.lower() == 'xport' and not dump_to_file:
             buffer = io.BytesIO()
@@ -144,6 +145,9 @@ class SASFormatExtractor(FormatExtractor):
                     else:
                         field_name = getattr(field, 'name', 'unknown')
                         field_type = "DOUBLE" if getattr(field, 'ntype', 2) == 1 else "STRING"
+
+                    if isinstance(field_name, bytes):
+                        field_name = field_name.decode(self.encoding)
                     
                     schema.append({"name": field_name, "type": field_type})
                 return schema
@@ -151,6 +155,8 @@ class SASFormatExtractor(FormatExtractor):
                 if hasattr(self.iterator, 'columns'):
                     schema = []
                     for col_name in self.iterator.columns:
+                        if isinstance(col_name, bytes):
+                            col_name = col_name.decode(self.encoding)
                         schema.append({"name": col_name, "type": "STRING"})
                     return schema
         else:
