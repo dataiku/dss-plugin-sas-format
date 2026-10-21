@@ -10,6 +10,13 @@
     
     "params": [
         {
+            "name": "use_original_schema",
+            "label": "Use original SAS schema",
+            "type": "BOOLEAN",
+            "defaultValue": false,
+            "description": "Use the file metadata to import numeric columns as doubles, character columns as strings, and recognized SAS date/datetime formats as dates. Disabled by default to preserve existing imports."
+        },
+        {
             "name": "chunksize",
             "label" : "Chunk size while reading",
             "type": "INT",
