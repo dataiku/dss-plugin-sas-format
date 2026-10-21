@@ -173,7 +173,7 @@ class SASFormatExtractor(FormatExtractor):
         return schema
 
     def convert_original_row(self, row):
-        # Normalize missing values and dates for both DSS preview (JSON) and reads (CSV).
+        # Normalize missing values and dates
         for name, value in row.items():
             if pd.isna(value):
                 row[name] = None
