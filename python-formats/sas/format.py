@@ -178,11 +178,18 @@ class SASFormatExtractor(FormatExtractor):
             if pd.isna(value):
                 row[name] = None
             elif name in self.date_units:
-                # Pandas converts SAS7BDAT dates, but leaves XPORT dates numeric.
-                if isinstance(value, Real):
-                    value = datetime(1960, 1, 1) + timedelta(**{self.date_units[name]: float(value)})
-                # SAS has no timezone; use UTC to produce DSS-compatible dates.
-                row[name] = value.isoformat() + "Z"
+                try:
+                    # Pandas converts SAS7BDAT dates, but leaves XPORT dates numeric.
+                    if isinstance(value, Real):
+                        value = datetime(1960, 1, 1) + timedelta(**{self.date_units[name]: float(value)})
+                    # Pandas timestamps can have years outside DSS's supported range.
+                    if not 1 <= value.year <= 9999:
+                        row[name] = None
+                    else:
+                        # SAS has no timezone; use UTC to produce DSS-compatible dates.
+                        row[name] = value.isoformat() + "Z"
+                except (OverflowError, ValueError):
+                    row[name] = None
         return row
 
     def get_chunk(self):

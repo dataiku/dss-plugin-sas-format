@@ -2,6 +2,7 @@
 import importlib.util
 import io
 import json
+import struct
 import sys
 import tempfile
 from collections import OrderedDict
@@ -118,6 +119,44 @@ def test_original_xport_schema_and_values(formatter_module, dump, schema):
         {"NUMBER": -2.0, "TEXT": "second", "DATE": "2020-01-01T00:00:00Z", "DATETIME": "1960-01-01T00:00:01.500000Z"},
         {"NUMBER": None, "TEXT": "missing", "DATE": None, "DATETIME": None},
     ]
+    json.dumps(rows, allow_nan=False)
+
+
+@pytest.mark.parametrize("dump", [False, True])
+@pytest.mark.parametrize("schema", [None, {"columns": [{"name": "DATE", "type": "date"}]}])
+@pytest.mark.parametrize("sas_format", ["sas7bdat", "xport"])
+def test_original_out_of_range_dates(formatter_module, tmp_path, dump, schema, sas_format):
+    # Simulate a datetime value accidentally stored with a date (days) format.
+    if sas_format == "sas7bdat":
+        filename = "highdate.sas7bdat"
+        original = struct.pack("<d", 2936547.0)
+        invalid = struct.pack("<d", 2026117800.0)
+        date_column = "highDate_date"
+    else:
+        filename = "mixed.xpt"
+        # XPORT stores numbers as IBM hexadecimal floats: 21915 -> 2026117800.
+        original = bytes.fromhex("44559b0000000000")
+        invalid = bytes.fromhex("4878c41aa8000000")
+        date_column = "DATE"
+
+    contents = (RESOURCES / filename).read_bytes()
+    assert original in contents
+    path = tmp_path / filename
+    path.write_bytes(contents.replace(original, invalid))
+
+    detected, rows = extract(formatter_module, path, {
+        "sas_format": sas_format, "use_original_schema": True,
+        "chunksize": 1, "dump_to_file": dump,
+    }, schema)
+    assert {"name": date_column, "type": "DATE"} in detected
+    assert rows[0 if sas_format == "sas7bdat" else 1][date_column] is None
+    if sas_format == "xport":
+        assert len(rows) == 3
+        assert rows[0]["DATE"] == "1960-01-01T00:00:00Z"
+        assert rows[1]["DATETIME"] == "1960-01-01T00:00:01.500000Z"
+        assert rows[2]["TEXT"] == "missing"
+    else:
+        assert rows[0]["highDate_num"] == 2026117800.0
     json.dumps(rows, allow_nan=False)
 
 
