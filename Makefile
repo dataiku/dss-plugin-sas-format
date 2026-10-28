@@ -10,7 +10,7 @@ plugin:
 	@rm -rf dist
 	@mkdir dist
 	@git archive -v -9 --format zip -o dist/${archive_file_name} HEAD
-	@zip --delete dist/${archive_file_name} "tests/*"
+	@zip --delete dist/${archive_file_name} "tests/*" "sas-samples"
 	@echo "[SUCCESS] Archiving plugin to dist/ folder: Done!"
 
 unit-tests:
