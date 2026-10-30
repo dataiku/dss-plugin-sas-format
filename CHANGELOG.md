@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 1.7.1-beta1 - Bugfix release - 2026-10-30
+
+- Use a space between date and time for DSS `datetimenotz` values in the Pandas reader.
+
 ## Version 1.7.0-beta1 - Feature release - 2026-10-30
 
 - Distinguish SAS dates (`dateonly`) and datetimes (`datetimenotz`) when using the original SAS schema in the Pandas reader, preserving their values without adding a timezone.

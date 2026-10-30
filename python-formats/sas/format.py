@@ -190,7 +190,7 @@ class SASFormatExtractor(FormatExtractor):
                         if self.date_units[name] == 'days':
                             row[name] = value.date().isoformat()
                         else:
-                            row[name] = value.isoformat()
+                            row[name] = value.isoformat(sep=' ')
                 except (OverflowError, ValueError):
                     row[name] = None
         return row

@@ -97,7 +97,7 @@ def test_original_dates(formatter_module, filename, dump, schema):
     expected = []
     for row in frame.to_dict("records"):
         expected.append({
-            name: (value.date().isoformat() if column_type == "DATEONLY" else value.isoformat())
+            name: (value.date().isoformat() if column_type == "DATEONLY" else value.isoformat(sep=' '))
             if isinstance(value, datetime) else value
             for (name, value), column_type in zip(row.items(), expected_types)
         })
@@ -120,8 +120,8 @@ def test_original_xport_schema_and_values(formatter_module, dump, schema):
         {"name": "DATETIME", "type": "DATETIMENOTZ"},
     ]
     assert rows == [
-        {"NUMBER": 1.5, "TEXT": "caf\u00e9", "DATE": "1960-01-01", "DATETIME": "1960-01-01T00:00:00"},
-        {"NUMBER": -2.0, "TEXT": "second", "DATE": "2020-01-01", "DATETIME": "1960-01-01T00:00:01.500000"},
+        {"NUMBER": 1.5, "TEXT": "caf\u00e9", "DATE": "1960-01-01", "DATETIME": "1960-01-01 00:00:00"},
+        {"NUMBER": -2.0, "TEXT": "second", "DATE": "2020-01-01", "DATETIME": "1960-01-01 00:00:01.500000"},
         {"NUMBER": None, "TEXT": "missing", "DATE": None, "DATETIME": None},
     ]
     json.dumps(rows, allow_nan=False)
@@ -158,7 +158,7 @@ def test_original_out_of_range_dates(formatter_module, tmp_path, dump, schema, s
     if sas_format == "xport":
         assert len(rows) == 3
         assert rows[0]["DATE"] == "1960-01-01"
-        assert rows[1]["DATETIME"] == "1960-01-01T00:00:01.500000"
+        assert rows[1]["DATETIME"] == "1960-01-01 00:00:01.500000"
         assert rows[2]["TEXT"] == "missing"
     else:
         assert rows[0]["highDate_num"] == 2026117800.0

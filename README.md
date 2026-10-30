@@ -13,7 +13,7 @@ In **SAS using Pandas**, enable **Use original SAS schema** to extract column ty
 - Numeric columns with date formats recognized by Pandas become DSS `dateonly` columns. SAS dates count days from 1960-01-01.
 - Numeric columns with datetime formats recognized by Pandas become DSS `datetimenotz` columns. SAS datetimes count seconds from 1960-01-01. Missing values remain empty.
 
-SAS dates carry no timezone. They are imported without adding a timezone or shifting the recorded date or time, using DSS-compatible ISO 8601 values (`YYYY-MM-DD` for dates and `YYYY-MM-DDTHH:MM:SS` with optional fractional seconds for datetimes).
+SAS dates carry no timezone. They are imported without adding a timezone or shifting the recorded date or time, using DSS-compatible values (`YYYY-MM-DD` for dates and `YYYY-MM-DD HH:MM:SS` with optional fractional seconds for datetimes).
 
 The option is disabled by default, including for existing datasets whose configuration does not contain it. With it disabled, schema detection and row values keep their previous behavior. The **SAS using sas7bdat** reader is unchanged.
 
