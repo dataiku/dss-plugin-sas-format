@@ -165,10 +165,10 @@ class SASFormatExtractor(FormatExtractor):
             if numeric:
                 if sas_format in sas_constants.sas_date_formats:
                     self.date_units[name] = 'days'
+                    column_type = "DATEONLY"
                 elif sas_format in sas_constants.sas_datetime_formats:
                     self.date_units[name] = 'seconds'
-                if name in self.date_units:
-                    column_type = "DATE"
+                    column_type = "DATETIMENOTZ"
             schema.append({"name": name, "type": column_type})
         return schema
 
@@ -186,8 +186,11 @@ class SASFormatExtractor(FormatExtractor):
                     if not 1 <= value.year <= 9999:
                         row[name] = None
                     else:
-                        # SAS has no timezone; use UTC to produce DSS-compatible dates.
-                        row[name] = value.isoformat() + "Z"
+                        # SAS dates and datetimes have no timezone.
+                        if self.date_units[name] == 'days':
+                            row[name] = value.date().isoformat()
+                        else:
+                            row[name] = value.isoformat()
                 except (OverflowError, ValueError):
                     row[name] = None
         return row

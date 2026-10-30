@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 1.7.0-beta1 - Feature release - 2026-10-30
+
+- Distinguish SAS dates (`dateonly`) and datetimes (`datetimenotz`) when using the original SAS schema in the Pandas reader, preserving their values without adding a timezone.
+- Existing datasets using the original SAS schema need schema detection again to adopt these types.
+
 ## Version 1.6.0 - Feature release - 2026-10-21
 
 - Return null for out-of-range SAS7BDAT and XPORT dates when using the original SAS schema, allowing the remaining rows to be read.

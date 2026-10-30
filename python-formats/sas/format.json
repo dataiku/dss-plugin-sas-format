@@ -14,7 +14,7 @@
             "label": "Use original SAS schema",
             "type": "BOOLEAN",
             "defaultValue": false,
-            "description": "Use the file metadata to import numeric columns as doubles, character columns as strings, and recognized SAS date/datetime formats as dates. Disabled by default to preserve existing imports."
+            "description": "Use the file metadata to import numeric columns as doubles, character columns as strings, SAS dates as date only, and SAS datetimes as datetime no zone. Date formats must be recognized by Pandas. Disabled by default to preserve existing imports."
         },
         {
             "name": "chunksize",

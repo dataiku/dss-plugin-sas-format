@@ -91,11 +91,16 @@ def test_original_dates(formatter_module, filename, dump, schema):
         "use_original_schema": True, "chunksize": 1, "dump_to_file": dump,
     }, schema)
     frame = pd.read_sas(RESOURCES / filename, encoding="latin_1")
-    expected_types = ["DOUBLE", "DATE"] if filename == "highdate.sas7bdat" else ["DATE"] * 5
+    expected_types = (["DOUBLE", "DATEONLY"] if filename == "highdate.sas7bdat"
+                      else ["DATEONLY", "DATEONLY", "DATETIMENOTZ", "DATETIMENOTZ", "DATEONLY"])
     assert [column["type"] for column in detected] == expected_types
     expected = []
     for row in frame.to_dict("records"):
-        expected.append({name: value.isoformat() + "Z" if isinstance(value, datetime) else value for name, value in row.items()})
+        expected.append({
+            name: (value.date().isoformat() if column_type == "DATEONLY" else value.isoformat())
+            if isinstance(value, datetime) else value
+            for (name, value), column_type in zip(row.items(), expected_types)
+        })
     assert rows == expected
     if filename == "highdate.sas7bdat":
         assert rows[0]["highDate_date"].startswith("9999-")
@@ -111,12 +116,12 @@ def test_original_xport_schema_and_values(formatter_module, dump, schema):
     assert detected == [
         {"name": "NUMBER", "type": "DOUBLE"},
         {"name": "TEXT", "type": "STRING"},
-        {"name": "DATE", "type": "DATE"},
-        {"name": "DATETIME", "type": "DATE"},
+        {"name": "DATE", "type": "DATEONLY"},
+        {"name": "DATETIME", "type": "DATETIMENOTZ"},
     ]
     assert rows == [
-        {"NUMBER": 1.5, "TEXT": "caf\u00e9", "DATE": "1960-01-01T00:00:00Z", "DATETIME": "1960-01-01T00:00:00Z"},
-        {"NUMBER": -2.0, "TEXT": "second", "DATE": "2020-01-01T00:00:00Z", "DATETIME": "1960-01-01T00:00:01.500000Z"},
+        {"NUMBER": 1.5, "TEXT": "caf\u00e9", "DATE": "1960-01-01", "DATETIME": "1960-01-01T00:00:00"},
+        {"NUMBER": -2.0, "TEXT": "second", "DATE": "2020-01-01", "DATETIME": "1960-01-01T00:00:01.500000"},
         {"NUMBER": None, "TEXT": "missing", "DATE": None, "DATETIME": None},
     ]
     json.dumps(rows, allow_nan=False)
@@ -148,12 +153,12 @@ def test_original_out_of_range_dates(formatter_module, tmp_path, dump, schema, s
         "sas_format": sas_format, "use_original_schema": True,
         "chunksize": 1, "dump_to_file": dump,
     }, schema)
-    assert {"name": date_column, "type": "DATE"} in detected
+    assert {"name": date_column, "type": "DATEONLY"} in detected
     assert rows[0 if sas_format == "sas7bdat" else 1][date_column] is None
     if sas_format == "xport":
         assert len(rows) == 3
-        assert rows[0]["DATE"] == "1960-01-01T00:00:00Z"
-        assert rows[1]["DATETIME"] == "1960-01-01T00:00:01.500000Z"
+        assert rows[0]["DATE"] == "1960-01-01"
+        assert rows[1]["DATETIME"] == "1960-01-01T00:00:01.500000"
         assert rows[2]["TEXT"] == "missing"
     else:
         assert rows[0]["highDate_num"] == 2026117800.0
@@ -172,12 +177,13 @@ def test_existing_xport_behavior(formatter_module, option, dump):
 @pytest.mark.parametrize("sas_format,numeric", [("sas7bdat", "d"), ("sas7bdat", b"d"), ("xport", 1), ("xport", "numeric")])
 @pytest.mark.parametrize("empty", [False, True])
 def test_schema_comes_from_metadata_not_sample(formatter_module, monkeypatch, sas_format, numeric, empty):
-    frame = pd.DataFrame({"num": [float("nan")], "text": [None], "date": [pd.NaT]})
+    frame = pd.DataFrame({"num": [float("nan")], "text": [None], "date": [pd.NaT], "datetime": [pd.NaT]})
     if sas_format == "sas7bdat":
         columns = [
             SimpleNamespace(name=b"num", ctype=numeric, format=""),
             SimpleNamespace(name="text", ctype=b"s", format="DATE"),
             SimpleNamespace(name="date", ctype=numeric, format=b"DATE"),
+            SimpleNamespace(name="datetime", ctype=numeric, format=b"DATETIME"),
         ]
         fields = []
     else:
@@ -186,6 +192,7 @@ def test_schema_comes_from_metadata_not_sample(formatter_module, monkeypatch, sa
             {"name": b"num", "ntype": numeric},
             {"name": "text", "ntype": "char", "nform": "DATE"},
             SimpleNamespace(name="date", ntype=numeric, nform=b"DATE"),
+            SimpleNamespace(name="datetime", ntype=numeric, nform=b"DATETIME"),
         ]
 
     class Reader:
@@ -204,9 +211,10 @@ def test_schema_comes_from_metadata_not_sample(formatter_module, monkeypatch, sa
     assert extractor.read_schema() == [
         {"name": "num", "type": "DOUBLE"},
         {"name": "text", "type": "STRING"},
-        {"name": "date", "type": "DATE"},
+        {"name": "date", "type": "DATEONLY"},
+        {"name": "datetime", "type": "DATETIMENOTZ"},
     ]
-    assert list(iter(extractor.read_row, None)) == ([] if empty else [{"num": None, "text": None, "date": None}])
+    assert list(iter(extractor.read_row, None)) == ([] if empty else [{"num": None, "text": None, "date": None, "datetime": None}])
 
 
 def test_option_is_disabled_by_default():
