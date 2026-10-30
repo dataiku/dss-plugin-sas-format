@@ -1,11 +1,8 @@
 # Changelog
 
-## Version 1.6.1 - Bugfix release - 2026-10-28
-
-- Return null for out-of-range SAS7BDAT and XPORT dates when using the original SAS schema, allowing the remaining rows to be read.
-
 ## Version 1.6.0 - Feature release - 2026-10-21
 
+- Return null for out-of-range SAS7BDAT and XPORT dates when using the original SAS schema, allowing the remaining rows to be read.
 - Add an opt-in original SAS schema option to the Pandas reader for SAS7BDAT and XPORT files, preserving numeric, character, and recognized date/datetime types.
 - Keep existing schema detection and row values unchanged when the option is absent or disabled.
 
