@@ -2,7 +2,10 @@ import os
 import time
 from collections import OrderedDict
 import io
+from datetime import datetime, timedelta
+from numbers import Real
 import pandas as pd
+from pandas.io.sas import sas_constants
 
 from dataiku.customformat import Formatter, FormatExtractor
 from dataiku.base.utils import TmpFolder
@@ -86,6 +89,9 @@ class SASFormatExtractor(FormatExtractor):
         self.sas_format = sas_format
         self.hasSchema = schema != None
         self.encoding = encoding
+        self.use_original_schema = config.get("use_original_schema", False)
+        self.original_schema = None
+        self.date_units = {}
 
         if sas_format.lower() == 'xport' and not dump_to_file:
             buffer = io.BytesIO()
@@ -121,18 +127,99 @@ class SASFormatExtractor(FormatExtractor):
                                         encoding=encoding,
                                         chunksize=chunksize)
 
+        if self.use_original_schema:
+            self.original_schema = self.get_original_schema()
+
         self.get_chunk()
 
+    def get_original_schema(self):
+        """Map SAS metadata to DSS types, independently of the sampled values."""
+        schema = []
+        if self.sas_format.lower() == 'xport':
+            columns = self.iterator.fields
+        else:
+            columns = self.iterator.columns
+
+        for column in columns:
+            if self.sas_format.lower() == 'xport':
+                if isinstance(column, dict):
+                    name = column['name']
+                    numeric_type = column['ntype']
+                    sas_format = column.get('nform', '')
+                else:
+                    name = column.name
+                    numeric_type = column.ntype
+                    sas_format = getattr(column, 'nform', '')
+                numeric = numeric_type in (1, 'numeric', b'numeric')
+            else:
+                name = column.name
+                numeric = column.ctype in ('d', b'd')
+                sas_format = column.format
+
+            if isinstance(name, bytes):
+                name = name.decode(self.encoding)
+            if isinstance(sas_format, bytes):
+                sas_format = sas_format.decode(self.encoding)
+
+            column_type = "DOUBLE" if numeric else "STRING"
+            if numeric:
+                if sas_format in sas_constants.sas_date_formats:
+                    self.date_units[name] = 'days'
+                    column_type = "DATEONLY"
+                elif sas_format in sas_constants.sas_datetime_formats:
+                    self.date_units[name] = 'seconds'
+                    column_type = "DATETIMENOTZ"
+            schema.append({"name": name, "type": column_type})
+        return schema
+
+    def convert_original_row(self, row):
+        # Normalize missing values and dates
+        for name, value in row.items():
+            if pd.isna(value):
+                row[name] = None
+            elif name in self.date_units:
+                try:
+                    # Pandas converts SAS7BDAT dates, but leaves XPORT dates numeric.
+                    if isinstance(value, Real):
+                        value = datetime(1960, 1, 1) + timedelta(**{self.date_units[name]: float(value)})
+                    # Pandas timestamps can have years outside DSS's supported range.
+                    if not 1 <= value.year <= 9999:
+                        row[name] = None
+                    else:
+                        # SAS dates and datetimes have no timezone.
+                        if self.date_units[name] == 'days':
+                            row[name] = value.date().isoformat()
+                        else:
+                            row[name] = value.isoformat(sep=' ')
+                except (OverflowError, ValueError):
+                    row[name] = None
+        return row
+
     def get_chunk(self):
+        try:
+            frame = next(self.iterator)
+        except StopIteration:
+            if not self.use_original_schema:
+                raise
+            self.chunk = []
+            self.chunk_nb = 0
+            return
+
         # Fix for previewing when using DSS < 4.1.X
         if self.hasSchema:
-            self.chunk = next(self.iterator).to_dict('records')
+            self.chunk = frame.to_dict('records')
         else:
-            self.chunk = [OrderedDict(row) for i, row in next(self.iterator).iterrows()]
+            self.chunk = [OrderedDict(row) for i, row in frame.iterrows()]
+
+        if self.use_original_schema:
+            self.chunk = [self.convert_original_row(row) for row in self.chunk]
 
         self.chunk_nb = 0
 
     def read_schema(self):
+        if self.use_original_schema:
+            return self.original_schema
+
         # For XPORT format, we need to extract the schema from the fields
         if self.sas_format.lower() == 'xport':
             # checking if the iterator has fields or columns
@@ -172,6 +259,8 @@ class SASFormatExtractor(FormatExtractor):
         try:
             if self.chunk_nb >= len(self.chunk):
                 self.get_chunk()
+                if self.use_original_schema and not self.chunk:
+                    return None
 
             self.chunk_nb += 1
             return self.chunk[self.chunk_nb - 1]
